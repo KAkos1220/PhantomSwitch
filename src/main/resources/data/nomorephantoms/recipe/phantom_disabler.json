@@ -1,0 +1,25 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "redstone",
+  "key": {
+    "#": {
+      "item": "minecraft:phantom_membrane"
+    },
+    "@": {
+      "item": "minecraft:netherite_ingot"
+    },
+    "&": {
+      "item": "minecraft:diamond"
+    }
+  },
+  "pattern": [
+    "#@#",
+    "@&@",
+    "#@#"
+  ],
+  "result": {
+    "count": 1,
+    "id": "nomorephantoms:phantom_disabler"
+
+  }
+}
