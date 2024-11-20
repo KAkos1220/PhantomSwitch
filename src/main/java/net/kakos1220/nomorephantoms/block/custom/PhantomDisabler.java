@@ -50,7 +50,7 @@ public class PhantomDisabler extends Block {
     }
 
     private void showClientMessage(PlayerEntity player, boolean state) {
-        String message = state ? "Phantoms enabled" : "Phantoms disabled";
+        String message = state ? "Phantoms Disabled!" : "Phantoms Enabled!";
         player.sendMessage(Text.of(message), true);
     }
 
