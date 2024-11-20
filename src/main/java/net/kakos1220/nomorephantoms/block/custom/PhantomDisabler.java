@@ -1,11 +1,12 @@
 package net.kakos1220.nomorephantoms.block.custom;
 
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerChunkEvents;
 import net.minecraft.block.*;
 import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.ItemStack;
-import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.sound.SoundEvent;
 import net.minecraft.sound.SoundEvents;
@@ -13,39 +14,64 @@ import net.minecraft.state.StateManager;
 import net.minecraft.state.property.BooleanProperty;
 import net.minecraft.text.Text;
 import net.minecraft.util.ActionResult;
+import net.minecraft.util.WorldSavePath;
 import net.minecraft.util.hit.BlockHitResult;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.ChunkPos;
 import net.minecraft.world.GameRules;
 import net.minecraft.world.World;
-import net.minecraft.world.chunk.Chunk;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.HashSet;
 import java.util.Set;
 
 public class PhantomDisabler extends Block {
-    private static final Path CONFIG_PATH = Paths.get("config/phantom_disabler.json");
-    private static final String ENABLED_KEY = "phantoms_disabled";
-    private static boolean phantomsDisabled = false;
     public static final BooleanProperty ACTIVE = BooleanProperty.of("active");
+    private static final Set<BlockPos> PHANTOM_DISABLER_POSITIONS = new HashSet<>();
 
     public PhantomDisabler(Settings settings) {
         super(settings);
-        loadConfig();
         this.setDefaultState(this.getStateManager().getDefaultState().with(ACTIVE, false));
     }
 
-    public class PhantomDisablerTracker {
-        public static final Set<BlockPos> PHANTOM_DISABLER_POSITIONS = new HashSet<>();
+
+    private static Path getWorldConfigPath(ServerWorld world) {
+        Path basePath = world.getServer().getSavePath(WorldSavePath.ROOT);
+        return basePath.resolve("phantom_disabler.json");
     }
 
-    private void playClientToggleSound(PlayerEntity player, boolean state) {
-        SoundEvent sound = state
-                ? SoundEvents.BLOCK_STONE_BUTTON_CLICK_OFF
-                : SoundEvents.BLOCK_STONE_BUTTON_CLICK_ON;
+    private static boolean loadWorldState(ServerWorld world) {
+        try {
+            Path configPath = getWorldConfigPath(world);
+            if (Files.exists(configPath)) {
+                String content = Files.readString(configPath);
+                JsonObject json = JsonParser.parseString(content).getAsJsonObject();
+                return json.get("phantomsDisabled").getAsBoolean();
+            } else {
+                saveWorldState(world, false);
+            }
+        } catch (Exception e) {
+            System.err.println("Failed to load Phantom Disabler config: " + e.getMessage());
+        }
+        return false;
+    }
 
+    private static void saveWorldState(ServerWorld world, boolean state) {
+        try {
+            Path configPath = getWorldConfigPath(world);
+            JsonObject json = new JsonObject();
+            json.addProperty("phantomsDisabled", state);
+
+            Files.createDirectories(configPath.getParent());
+            Files.writeString(configPath, json.toString());
+        } catch (Exception e) {
+            System.err.println("Failed to save Phantom Disabler config: " + e.getMessage());
+        }
+    }
+
+
+    private void playClientToggleSound(PlayerEntity player, boolean state) {
+        SoundEvent sound = state ? SoundEvents.BLOCK_STONE_BUTTON_CLICK_ON : SoundEvents.BLOCK_STONE_BUTTON_CLICK_OFF;
         player.playSound(sound, 1.0f, 1.0f);
     }
 
@@ -54,76 +80,61 @@ public class PhantomDisabler extends Block {
         player.sendMessage(Text.of(message), true);
     }
 
-    private void updateBlockStates(World world) {
+    private void updateAllPhantomDisabler(World world, boolean state) {
         if (!(world instanceof ServerWorld serverWorld)) return;
 
-        boolean newState = phantomsDisabled;
-
-        int minChunkX = serverWorld.getServer().getPlayerManager().getViewDistance() * -1;
-        int maxChunkX = serverWorld.getServer().getPlayerManager().getViewDistance();
-        int minChunkZ = minChunkX;
-        int maxChunkZ = maxChunkX;
-
-        for (int chunkX = minChunkX; chunkX <= maxChunkX; chunkX++) {
-            for (int chunkZ = minChunkZ; chunkZ <= maxChunkZ; chunkZ++) {
-                Chunk chunk = serverWorld.getChunk(chunkX, chunkZ);
-                if (chunk != null) {
-                    for (BlockPos pos : BlockPos.iterate(chunk.getPos().getStartX(), serverWorld.getBottomY(),
-                            chunk.getPos().getStartZ(), chunk.getPos().getEndX(), serverWorld.getTopY(), chunk.getPos().getEndZ())) {
-
-                        BlockState state = serverWorld.getBlockState(pos);
-
-                        if (state.getBlock() instanceof PhantomDisabler) {
-                            serverWorld.setBlockState(pos, state.with(PhantomDisabler.ACTIVE, newState));
-                        }
-                    }
-                }
+        for (BlockPos pos : PHANTOM_DISABLER_POSITIONS) {
+            BlockState blockState = serverWorld.getBlockState(pos);
+            if (blockState.getBlock() instanceof PhantomDisabler) {
+                serverWorld.setBlockState(pos, blockState.with(ACTIVE, state));
             }
         }
     }
 
-    public class PhantomDisablerChunkListener {
-        public static void registerChunkLoadListener() {
-            ServerChunkEvents.CHUNK_LOAD.register((world, chunk) -> {
-                if (world instanceof ServerWorld serverWorld) {
-                    for (BlockPos pos : PhantomDisablerTracker.PHANTOM_DISABLER_POSITIONS) {
-                        if (chunk.getPos().equals(new ChunkPos(pos))) {
-                            BlockState state = serverWorld.getBlockState(pos);
-                            if (state.getBlock() instanceof PhantomDisabler) {
-                                serverWorld.setBlockState(pos, state.with(PhantomDisabler.ACTIVE, PhantomDisabler.phantomsDisabled));
-                            }
+    public static void registerChunkListener() {
+        ServerChunkEvents.CHUNK_LOAD.register((world, chunk) -> {
+            if (!(world instanceof ServerWorld serverWorld)) return;
+
+            boolean currentState = loadWorldState(serverWorld);
+            ChunkPos chunkPos = chunk.getPos();
+
+            PHANTOM_DISABLER_POSITIONS.stream()
+                    .filter(pos -> chunkPos.equals(new ChunkPos(pos)))
+                    .forEach(pos -> {
+                        BlockState blockState = serverWorld.getBlockState(pos);
+                        if (blockState.getBlock() instanceof PhantomDisabler) {
+                            serverWorld.setBlockState(pos, blockState.with(ACTIVE, currentState));
                         }
-                    }
-                }
-            });
-        }
+                    });
+        });
     }
 
 
     @Override
     public ActionResult onUse(BlockState state, World world, BlockPos pos, PlayerEntity player, BlockHitResult hit) {
-        boolean newState = !state.get(ACTIVE);
-
         if (world.isClient) {
-            world.setBlockState(pos, state.with(ACTIVE, newState));
-            playClientToggleSound(player, newState);
-            showClientMessage(player, newState);
+            boolean clientNewState = !state.get(ACTIVE);
+            playClientToggleSound(player, clientNewState);
+            showClientMessage(player, clientNewState);
             return ActionResult.SUCCESS;
         }
 
+        if (!(world instanceof ServerWorld serverWorld)) return ActionResult.FAIL;
+
+        boolean currentState = loadWorldState(serverWorld);
+
+        boolean newState = !currentState;
+        saveWorldState(serverWorld, newState);
+
         world.setBlockState(pos, state.with(ACTIVE, newState));
 
-        phantomsDisabled = newState;
-        saveConfig();
+        serverWorld.getGameRules().get(GameRules.DO_INSOMNIA).set(!newState, serverWorld.getServer());
 
-        MinecraftServer server = world.getServer();
-        if (server != null) {
-            server.getGameRules().get(GameRules.DO_INSOMNIA).set(!phantomsDisabled, server);
-        }
+        updateAllPhantomDisabler(world, newState);
 
-        updateBlockStates(world);
+        player.sendMessage(Text.of(newState ? "Phantoms Disabled!" : "Phantoms Enabled!"), true);
 
-        return ActionResult.CONSUME;
+        return ActionResult.SUCCESS;
     }
 
     @Override
@@ -136,42 +147,18 @@ public class PhantomDisabler extends Block {
         super.onPlaced(world, pos, state, placer, itemStack);
 
         if (!world.isClient) {
-            boolean initialState = PhantomDisabler.phantomsDisabled;
+            boolean initialState = loadWorldState((ServerWorld) world);
             world.setBlockState(pos, state.with(ACTIVE, initialState));
-
-            PhantomDisablerTracker.PHANTOM_DISABLER_POSITIONS.add(pos);
+            PHANTOM_DISABLER_POSITIONS.add(pos);
         }
     }
 
     @Override
     public void onStateReplaced(BlockState state, World world, BlockPos pos, BlockState newState, boolean moved) {
         super.onStateReplaced(state, world, pos, newState, moved);
+
         if (!world.isClient && !(newState.getBlock() instanceof PhantomDisabler)) {
-            PhantomDisablerTracker.PHANTOM_DISABLER_POSITIONS.remove(pos);
-        }
-    }
-
-
-    private static void loadConfig() {
-        try {
-            if (Files.exists(CONFIG_PATH)) {
-                String content = Files.readString(CONFIG_PATH);
-                phantomsDisabled = Boolean.parseBoolean(content.trim());
-            } else {
-                phantomsDisabled = false;
-                saveConfig();
-            }
-        } catch (Exception e) {
-            System.err.println("Failed to load Phantom Disabler config: " + e.getMessage());
-        }
-    }
-
-    private static void saveConfig() {
-        try {
-            Files.createDirectories(CONFIG_PATH.getParent());
-            Files.writeString(CONFIG_PATH, Boolean.toString(phantomsDisabled));
-        } catch (Exception e) {
-            System.err.println("Failed to save Phantom Disabler config: " + e.getMessage());
+            PHANTOM_DISABLER_POSITIONS.remove(pos);
         }
     }
 }
