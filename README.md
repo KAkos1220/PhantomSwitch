@@ -18,3 +18,6 @@ You might be asking -- Why is it so expensive to craft?
 
 ## Versions
 Currently the mod is only supporting 1.21, but I plan to update it to 1.21.1 and 1.21.3 in the very near future.
+
+
+This is a fairly new project so every download is appreciated!
