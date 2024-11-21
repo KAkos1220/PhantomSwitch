@@ -1,5 +1,4 @@
-# **Phantom Switch** ![Static Badge](https://img.shields.io/badge/%E2%9D%A4%EF%B8%8F-gray?logoSize=auto&label=Made%20with&labelColor=red)
-
+# **Phantom Switch** ![Static Badge](https://img.shields.io/badge/%E2%9D%A4%EF%B8%8F-gray?logoSize=auto&label=Made%20with&labelColor=red) [![CurseForge](http://cf.way2muchnoise.eu/title/1144816.svg)](https://www.curseforge.com/minecraft/mc-mods/phantom-switch)
 
 Are you tired of phantoms eating you up in your singleplayer world?
  - Well, look no further!
