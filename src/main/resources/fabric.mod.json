@@ -8,8 +8,9 @@
 		"KAkos1220"
 	],
 	"contact": {
+		"homepage": "https://www.curseforge.com/minecraft/mc-mods/phantom-switch",
 		"sources": "https://github.com/KAkos1220/PhantomSwitch",
-		"homepage": "https://www.curseforge.com/minecraft/mc-mods/phantom-switch"
+		"issues": "https://github.com/KAkos1220/PhantomSwitch/issues"
 	},
 	"license": "MIT",
 	"icon": "assets/nomorephantoms/icon.png",
