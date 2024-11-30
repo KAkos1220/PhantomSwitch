@@ -16,7 +16,6 @@ You might be asking -- Why is it so expensive to craft?
   Otherwise, they you could just download some random NoPhantoms mod.
 
 ## Versions
-Currently the mod is only supporting 1.21 and 1.21.1, but I plan to update it to 1.21.3 in the very near future.
-
+The mod works from 1.21 to 1.21.3, and I have no plans to make it available for earlier versions.
 
 This is a fairly new project so every download is appreciated!
