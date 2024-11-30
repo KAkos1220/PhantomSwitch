@@ -17,6 +17,7 @@ You might be asking -- Why is it so expensive to craft?
 
 ## Versions
 The mod works from 1.21 to 1.21.3, and I have no plans to make it available for earlier versions.
+
 Fabric Loader 0.16.9 is required.
 
 This is a fairly new project so every download is appreciated!
