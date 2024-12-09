@@ -1,0 +1,6 @@
+{
+  "model": {
+    "type": "minecraft:model",
+    "model": "nomorephantoms:block/phantom_disabler_item"
+  }
+}

@@ -1,0 +1,6 @@
+{
+  "parent": "block/cube_all",
+  "textures": {
+    "all": "nomorephantoms:block/phantom_disabler_item"
+  }
+}

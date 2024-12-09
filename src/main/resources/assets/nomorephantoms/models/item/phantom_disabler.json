@@ -1,6 +1,0 @@
-{
-  "parent": "minecraft:block/cube_all",
-  "textures": {
-    "all": "nomorephantoms:block/phantom_disabler"
-  }
-}
