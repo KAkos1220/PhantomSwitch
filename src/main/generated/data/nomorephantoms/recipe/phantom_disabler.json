@@ -2,15 +2,9 @@
   "type": "minecraft:crafting_shaped",
   "category": "redstone",
   "key": {
-    "#": {
-      "item": "minecraft:phantom_membrane"
-    },
-    "@": {
-      "item": "minecraft:netherite_ingot"
-    },
-    "&": {
-      "item": "minecraft:diamond"
-    }
+    "#": "minecraft:phantom_membrane",
+    "&": "minecraft:diamond",
+    "@": "minecraft:netherite_ingot"
   },
   "pattern": [
     "#@#",

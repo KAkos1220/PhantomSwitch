@@ -41,6 +41,5 @@ public class ModBlocks {
         ItemGroupEvents.modifyEntriesEvent(ItemGroups.REDSTONE).register(entries -> {
             entries.add(ModBlocks.phantom_disabler);
         });
-
     }
 }
