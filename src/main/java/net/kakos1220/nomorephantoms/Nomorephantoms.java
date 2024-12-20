@@ -15,6 +15,6 @@ public class Nomorephantoms implements ModInitializer {
 	public void onInitialize() {
 		ModItems.registerModItems();
 		ModBlocks.registerModBlocks();
-		PhantomDisabler.registerChunkListener();
+		PhantomDisabler.IsPhantomDisablerPlaced();
 	}
 }
