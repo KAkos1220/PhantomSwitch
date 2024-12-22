@@ -16,7 +16,7 @@ You might be asking -- Why is it so expensive to craft?
   Otherwise, they you could just download some random NoPhantoms mod.
 
 ## Versions
-The mod works from 1.21 to 1.21.3, and I have no plans to make it available for earlier versions.
+The mod works from 1.21 to 1.21.4, and I have no plans to make it available for earlier versions.
 
 Fabric Loader 0.16.9 is required.
 
