@@ -13,7 +13,7 @@ Here's the crafting recipe for the Phantom disabler block:
 You might be asking -- Why is it so expensive to craft?
   - It's because the mod's purpose is that players don't feel guilty
   when they disable the phantoms. 
-  Otherwise, they you could just download some random NoPhantoms mod.
+  Otherwise, they could just download some random NoPhantoms mod.
 
 ## Versions
 The mod works from 1.21 to 1.21.4, and I have no plans to make it available for earlier versions.
