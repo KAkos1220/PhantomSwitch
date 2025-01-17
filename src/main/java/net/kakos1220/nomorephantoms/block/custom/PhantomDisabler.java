@@ -5,6 +5,7 @@ import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.ItemPlacementContext;
+import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.sound.SoundCategory;
 import net.minecraft.sound.SoundEvents;
 import net.minecraft.state.StateManager;
@@ -120,12 +121,22 @@ public class PhantomDisabler extends Block {
     @Override
     public BlockState getPlacementState(ItemPlacementContext ctx) {
         if (HasBeenPlaced) {
-            if (!ctx.getWorld().isClient) {
-                ctx.getPlayer().sendMessage(Text.translatable("message.blockisplaced"), true);
+            PlayerEntity player = ctx.getPlayer();
+
+            if (player instanceof ServerPlayerEntity serverPlayer && !serverPlayer.getServer().isSingleplayer()) {
+                serverPlayer.networkHandler.disconnect(Text.translatable("message.blockisplaced"));
             }
 
-            if (ctx.getPlayer() != null) {
-                ctx.getPlayer().swingHand(ctx.getHand());
+            else {
+                if (!ctx.getWorld().isClient) {
+                    ctx.getPlayer().sendMessage(Text.translatable("message.blockisplaced"), true);
+                }
+
+                if (ctx.getPlayer() != null) {
+                    ctx.getPlayer().swingHand(ctx.getHand());
+                    return null;
+                }
+
                 return null;
             }
 
