@@ -29,6 +29,7 @@ bin/
 *.DS_Store
 
 # fabric
+
 /serverrun/
 /clientrun/
 
@@ -38,3 +39,7 @@ hs_err_*.log
 replay_*.log
 *.hprof
 *.jfr
+
+# datagen
+
+/datagen/
