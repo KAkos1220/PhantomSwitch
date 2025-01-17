@@ -47,6 +47,19 @@ tasks.withType(JavaCompile).configureEach {
 	it.options.release = 21
 }
 
+tasks.register("cleanRunFolder") {
+	doLast {
+		def runDir = file("${projectDir}/run")
+		if (runDir.exists()) {
+			runDir.deleteDir()
+		}
+	}
+}
+
+tasks.named("build") {
+	finalizedBy("cleanRunFolder")
+}
+
 java {
 	// Loom will automatically attach sourcesJar to a RemapSourcesJar task and to the "build" task
 	// if it is present.
