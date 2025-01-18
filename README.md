@@ -15,6 +15,8 @@ You might be asking -- Why is it so expensive to craft?
   when they disable the phantoms. 
   Otherwise, they could just download some random NoPhantoms mod.
 
+You can also use this mod in multiplayer servers (Both client and server side required).
+
 ## Versions
 The mod works from 1.21 to 1.21.4, and I have no plans to make it available for earlier versions.
 
