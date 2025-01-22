@@ -20,7 +20,7 @@ You can also use this mod in multiplayer servers (Both client and server side re
 ## Versions
 The mod works from 1.21 to 1.21.4, and I have no plans to make it available for earlier versions.
 
-Fabric Loader 0.16.9 is required.
+Fabric Loader 0.16.9 or newer is required.
 
 
 This is a fairly new project so every download is appreciated!
