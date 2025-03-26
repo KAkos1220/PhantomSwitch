@@ -6,6 +6,7 @@ import net.minecraft.block.BlockState;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.ItemPlacementContext;
 import net.minecraft.server.network.ServerPlayerEntity;
+import net.minecraft.server.world.ServerWorld;
 import net.minecraft.sound.SoundCategory;
 import net.minecraft.sound.SoundEvents;
 import net.minecraft.state.StateManager;
@@ -106,16 +107,16 @@ public class PhantomDisabler extends Block {
     }
 
     @Override
-    public void onStateReplaced(BlockState state, World world, BlockPos pos, BlockState newState, boolean moved) {
-        if (!world.isClient && state.getBlock() != newState.getBlock()) {
+    public void onStateReplaced(BlockState state, ServerWorld world, BlockPos pos, boolean moved) {
+        if (!world.isClient) {
             SetPlacement(world, false, pos);
         }
 
-        if (state.get(ACTIVE) && !newState.isOf(this)) {
+        if (state.get(ACTIVE)) {
             world.getServer().getGameRules().get(GameRules.DO_INSOMNIA).set(true, world.getServer());
         }
 
-        super.onStateReplaced(state, world, pos, newState, moved);
+        super.onStateReplaced(state, world, pos, moved);
     }
 
     @Override
