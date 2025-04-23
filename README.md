@@ -18,7 +18,7 @@ You might be asking -- Why is it so expensive to craft?
 You can also use this mod in multiplayer servers (Both client and server side required).
 
 ## Versions
-The mod works from 1.21 to 1.21.4, and I have no plans to make it available for earlier versions.
+The mod works from 1.21 to 1.21.5, and I have no plans to make it available for earlier versions.
 
 Fabric Loader 0.16.9 or newer is required.
 
