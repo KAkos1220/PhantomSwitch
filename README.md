@@ -20,6 +20,6 @@ You can also use this mod in multiplayer servers (Both client and server side re
 ## Versions
 The mod works from 1.21 to 1.21.3, and I have no plans to make it available for earlier versions.
 
-[Fabric API](https://modrinth.com/mod/fabric-api) is requied.
+[Fabric API](https://modrinth.com/mod/fabric-api) is required.
 
-This is a fairly new project so every download is appreciated!
+This is a fairly new project, so every download is appreciated!
