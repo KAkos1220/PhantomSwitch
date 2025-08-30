@@ -40,7 +40,7 @@ public class PhantomDisabler extends Block {
 
     @Override
     protected void appendProperties(StateManager.Builder<Block, BlockState> builder) {
-        builder.add(ACTIVE,POWERED);
+        builder.add(ACTIVE, POWERED);
     }
 
 
