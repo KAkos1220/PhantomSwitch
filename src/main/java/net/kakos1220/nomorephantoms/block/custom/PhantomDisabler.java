@@ -5,7 +5,9 @@ import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.ItemPlacementContext;
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.network.ServerPlayerEntity;
+import net.minecraft.server.world.ServerWorld;
 import net.minecraft.sound.SoundCategory;
 import net.minecraft.sound.SoundEvents;
 import net.minecraft.state.StateManager;
@@ -23,19 +25,21 @@ import java.nio.file.Path;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.google.gson.JsonPrimitive;
+import org.jetbrains.annotations.Nullable;
 
 public class PhantomDisabler extends Block {
     public static final BooleanProperty ACTIVE = BooleanProperty.of("active");
+    public static final BooleanProperty POWERED = BooleanProperty.of("powered");
     private static boolean HasBeenPlaced = false;
 
     public PhantomDisabler(Settings settings) {
         super(settings);
-        this.setDefaultState(this.stateManager.getDefaultState().with(ACTIVE, false));
+        this.setDefaultState(this.stateManager.getDefaultState().with(ACTIVE, false).with(POWERED, false));
     }
 
     @Override
     protected void appendProperties(StateManager.Builder<Block, BlockState> builder) {
-        builder.add(ACTIVE);
+        builder.add(ACTIVE, POWERED);
     }
 
 
@@ -164,5 +168,41 @@ public class PhantomDisabler extends Block {
         }
 
         return ActionResult.SUCCESS;
+    }
+
+    //Redstone Support
+    @Override
+    protected boolean hasComparatorOutput(BlockState state) {
+        return true;
+    }
+
+    @Override
+    protected int getComparatorOutput(BlockState state, World world, BlockPos pos) {
+        return world.getBlockState(pos).get(ACTIVE) ? 15 : 0;
+    }
+
+    @Override
+    protected void neighborUpdate(BlockState state, World world, BlockPos pos, Block sourceBlock, BlockPos sourcePos, boolean notify) {
+        if (world instanceof ServerWorld serverWorld) {
+            this.update(state, serverWorld, pos);
+        }
+    }
+
+    public void update(BlockState state, ServerWorld world, BlockPos pos) {
+        boolean bl = world.isReceivingRedstonePower(pos);
+        if (bl != (Boolean)state.get(POWERED)) {
+            BlockState blockState = state;
+            if (!(Boolean)state.get(POWERED)) {
+                blockState = state.cycle(ACTIVE);
+                world.playSound(null, pos, blockState.get(ACTIVE) ? SoundEvents.BLOCK_STONE_BUTTON_CLICK_ON : SoundEvents.BLOCK_STONE_BUTTON_CLICK_OFF, SoundCategory.BLOCKS);
+                String message = blockState.get(ACTIVE) ? "message.phantomsdisabled" : "message.phantomsenabled";
+                MinecraftServer server = world.getServer();
+                for (ServerPlayerEntity player : server.getPlayerManager().getPlayerList()) {
+                    player.sendMessage(Text.translatable(message), true);
+                }
+            }
+
+            world.setBlockState(pos, blockState.with(POWERED, bl), Block.NOTIFY_ALL);
+        }
     }
 }
