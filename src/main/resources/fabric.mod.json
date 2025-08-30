@@ -1,7 +1,7 @@
 {
 	"schemaVersion": 1,
 	"id": "nomorephantoms",
-	"version": "2.1",
+	"version": "${version}",
 	"name": "Phantom Switch",
 	"description": "The most vanilla way to turn off phantoms in your survival world.",
 	"authors": [
