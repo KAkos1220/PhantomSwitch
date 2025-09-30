@@ -17,6 +17,7 @@ import net.minecraft.util.ActionResult;
 import net.minecraft.util.WorldSavePath;
 import net.minecraft.util.hit.BlockHitResult;
 import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.math.Direction;
 import net.minecraft.world.GameRules;
 import net.minecraft.world.World;
 import java.io.IOException;
@@ -94,7 +95,7 @@ public class PhantomDisabler extends Block {
 
     public static void IsPhantomDisablerPlaced() {
         ServerWorldEvents.LOAD.register((server, world) -> {
-            if (!world.isClient) {
+            if (!world.isClient()) {
                 PhantomDisabler.Startup(world);
             }
         });
@@ -103,7 +104,7 @@ public class PhantomDisabler extends Block {
 
     @Override
     public void onBlockAdded(BlockState state, World world, BlockPos pos, BlockState oldState, boolean notify) {
-        if (!world.isClient) {
+        if (!world.isClient()) {
             SetPlacement(world, true, pos);
         }
 
@@ -112,7 +113,7 @@ public class PhantomDisabler extends Block {
 
     @Override
     public void onStateReplaced(BlockState state, ServerWorld world, BlockPos pos, boolean moved) {
-        if (!world.isClient) {
+        if (!world.isClient()) {
             SetPlacement(world, false, pos);
         }
 
@@ -128,12 +129,14 @@ public class PhantomDisabler extends Block {
         if (HasBeenPlaced) {
             PlayerEntity player = ctx.getPlayer();
 
-            if (player instanceof ServerPlayerEntity serverPlayer && !serverPlayer.getServer().isSingleplayer()) {
-                serverPlayer.networkHandler.disconnect(Text.translatable("message.blockisplaced"));
+            if (player instanceof ServerPlayerEntity serverPlayer
+                && serverPlayer.getEntityWorld().getServer() != null
+                && !serverPlayer.getEntityWorld().getServer().isSingleplayer()) {
+                    serverPlayer.networkHandler.disconnect(Text.translatable("message.blockisplaced"));
             }
 
             else {
-                if (!ctx.getWorld().isClient) {
+                if (!ctx.getWorld().isClient()) {
                     ctx.getPlayer().sendMessage(Text.translatable("message.blockisplaced"), true);
                 }
 
@@ -154,7 +157,7 @@ public class PhantomDisabler extends Block {
 
     @Override
     public ActionResult onUse(BlockState state, World world, BlockPos pos, PlayerEntity player, BlockHitResult hit) {
-        if (!world.isClient) {
+        if (!world.isClient()) {
             boolean currentState = state.get(ACTIVE);
             BlockState newState = state.with(ACTIVE, !currentState);
             world.setBlockState(pos, newState, 3);
@@ -178,7 +181,7 @@ public class PhantomDisabler extends Block {
     }
 
     @Override
-    protected int getComparatorOutput(BlockState state, World world, BlockPos pos) {
+    protected int getComparatorOutput(BlockState state, World world, BlockPos pos, Direction direction) {
         return world.getBlockState(pos).get(ACTIVE) ? 15 : 0;
     }
 

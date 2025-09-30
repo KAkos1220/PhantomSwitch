@@ -2,5 +2,5 @@
   "block.nomorephantoms.phantom_disabler": "Phantom Disabler",
   "message.phantomsenabled": "Phantoms Enabled!",
   "message.phantomsdisabled": "Phantoms Disabled!",
-  "message.blockisplaced": "Block has been already placed!"
+  "message.blockisplaced": "Block has already been placed!"
 }
