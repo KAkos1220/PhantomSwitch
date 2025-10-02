@@ -18,6 +18,6 @@ You might be asking -- Why is it so expensive to craft?
 You can also use this mod in multiplayer servers (Both client and server side required).
 
 ## Versions
-The mod works from 1.21 to 1.21.8, and I have no plans to make it available for earlier versions.
+The mod works from 1.21 to 1.21.9, and I have no plans to make it available for earlier versions.
 
 [Fabric API](https://modrinth.com/mod/fabric-api) is required.
