@@ -18,7 +18,7 @@ import net.minecraft.util.WorldSavePath;
 import net.minecraft.util.hit.BlockHitResult;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Direction;
-import net.minecraft.world.GameRules;
+import net.minecraft.world.rule.GameRules;
 import net.minecraft.world.World;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -112,16 +112,18 @@ public class PhantomDisabler extends Block {
     }
 
     @Override
-    public void onStateReplaced(BlockState state, ServerWorld world, BlockPos pos, boolean moved) {
-        if (!world.isClient()) {
-            SetPlacement(world, false, pos);
+    public void onStateReplaced(BlockState state, ServerWorld serverWorld, BlockPos pos, boolean moved) {
+        if (!serverWorld.isClient()) {
+            SetPlacement(serverWorld, false, pos);
         }
 
-        if (state.get(ACTIVE)) {
-            world.getServer().getGameRules().get(GameRules.DO_INSOMNIA).set(true, world.getServer());
+        boolean active = state.get(ACTIVE);
+        if (active) {
+            MinecraftServer server = serverWorld.getServer();
+            serverWorld.getGameRules().setValue(GameRules.SPAWN_PHANTOMS, active, server);
         }
 
-        super.onStateReplaced(state, world, pos, moved);
+        super.onStateReplaced(state, serverWorld, pos, moved);
     }
 
     @Override
@@ -165,7 +167,12 @@ public class PhantomDisabler extends Block {
             String message = !currentState ? "message.phantomsdisabled" : "message.phantomsenabled";
             player.sendMessage(Text.translatable(message), true);
 
-            world.getServer().getGameRules().get(GameRules.DO_INSOMNIA).set(state.get(ACTIVE), world.getServer());
+            boolean active = state.get(ACTIVE);
+            if (active) {
+                ServerWorld serverWorld = (ServerWorld) world;
+                MinecraftServer server = serverWorld.getServer();
+                serverWorld.getGameRules().setValue(GameRules.SPAWN_PHANTOMS, active, server);
+            }
 
             world.playSound(null, pos, currentState ? SoundEvents.BLOCK_STONE_BUTTON_CLICK_OFF : SoundEvents.BLOCK_STONE_BUTTON_CLICK_ON,
                     SoundCategory.BLOCKS, 1.0F, 1.0F);
