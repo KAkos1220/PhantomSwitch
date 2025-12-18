@@ -1,54 +1,54 @@
 package net.kakos1220.nomorephantoms.block.custom;
 
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerWorldEvents;
-import net.minecraft.block.Block;
-import net.minecraft.block.BlockState;
-import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.item.ItemPlacementContext;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
+import net.minecraft.network.chat.Component;
 import net.minecraft.server.MinecraftServer;
-import net.minecraft.server.network.ServerPlayerEntity;
-import net.minecraft.server.world.ServerWorld;
-import net.minecraft.sound.SoundCategory;
-import net.minecraft.sound.SoundEvents;
-import net.minecraft.state.StateManager;
-import net.minecraft.state.property.BooleanProperty;
-import net.minecraft.text.Text;
-import net.minecraft.util.ActionResult;
-import net.minecraft.util.WorldSavePath;
-import net.minecraft.util.hit.BlockHitResult;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.Direction;
-import net.minecraft.world.rule.GameRules;
-import net.minecraft.world.World;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.sounds.SoundEvents;
+import net.minecraft.sounds.SoundSource;
+import net.minecraft.world.InteractionResult;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.context.BlockPlaceContext;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.block.state.StateDefinition;
+import net.minecraft.world.level.block.state.properties.BooleanProperty;
+import net.minecraft.world.level.gamerules.GameRules;
+import net.minecraft.world.level.redstone.Orientation;
+import net.minecraft.world.level.storage.LevelResource;
+import net.minecraft.world.phys.BlockHitResult;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.google.gson.JsonPrimitive;
-import net.minecraft.world.block.WireOrientation;
 import org.jetbrains.annotations.Nullable;
 
 public class PhantomDisabler extends Block {
-    public static final BooleanProperty ACTIVE = BooleanProperty.of("active");
-    public static final BooleanProperty POWERED = BooleanProperty.of("powered");
+    public static final BooleanProperty ACTIVE = BooleanProperty.create("active");
+    public static final BooleanProperty POWERED = BooleanProperty.create("powered");
     private static boolean HasBeenPlaced = false;
 
-    public PhantomDisabler(Settings settings) {
+    public PhantomDisabler(Properties settings) {
         super(settings);
-        this.setDefaultState(this.stateManager.getDefaultState().with(ACTIVE, false).with(POWERED, false));
+        this.registerDefaultState(this.stateDefinition.any().setValue(ACTIVE, false).setValue(POWERED, false));
     }
 
     @Override
-    protected void appendProperties(StateManager.Builder<Block, BlockState> builder) {
+    protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
         builder.add(ACTIVE, POWERED);
     }
 
 
-    private void SetPlacement(World world, boolean IsItPlaced, BlockPos pos) {
+    private void SetPlacement(Level world, boolean IsItPlaced, BlockPos pos) {
         HasBeenPlaced = IsItPlaced;
 
-        Path worldPath = world.getServer().getSavePath(WorldSavePath.ROOT);
+        Path worldPath = world.getServer().getWorldPath(LevelResource.ROOT);
         Path filePath = worldPath.resolve("PhantomSwitch.json");
 
         JsonObject jsonObject = new JsonObject();
@@ -71,8 +71,8 @@ public class PhantomDisabler extends Block {
         }
     }
 
-    public static void Startup(World world) {
-        Path worldPath = world.getServer().getSavePath(WorldSavePath.ROOT);
+    public static void Startup(Level world) {
+        Path worldPath = world.getServer().getWorldPath(LevelResource.ROOT);
         Path filePath = worldPath.resolve("PhantomSwitch.json");
 
         if (Files.exists(filePath)) {
@@ -95,7 +95,7 @@ public class PhantomDisabler extends Block {
 
     public static void IsPhantomDisablerPlaced() {
         ServerWorldEvents.LOAD.register((server, world) -> {
-            if (!world.isClient()) {
+            if (!world.isClientSide()) {
                 PhantomDisabler.Startup(world);
             }
         });
@@ -103,47 +103,47 @@ public class PhantomDisabler extends Block {
 
 
     @Override
-    public void onBlockAdded(BlockState state, World world, BlockPos pos, BlockState oldState, boolean notify) {
-        if (!world.isClient()) {
+    public void onPlace(BlockState state, Level world, BlockPos pos, BlockState oldState, boolean notify) {
+        if (!world.isClientSide()) {
             SetPlacement(world, true, pos);
         }
 
-        super.onBlockAdded(state, world, pos, oldState, notify);
+        super.onPlace(state, world, pos, oldState, notify);
     }
 
     @Override
-    public void onStateReplaced(BlockState state, ServerWorld serverWorld, BlockPos pos, boolean moved) {
-        if (!serverWorld.isClient()) {
+    public void affectNeighborsAfterRemoval(BlockState state, ServerLevel serverWorld, BlockPos pos, boolean moved) {
+        if (!serverWorld.isClientSide()) {
             SetPlacement(serverWorld, false, pos);
         }
 
-        boolean active = state.get(ACTIVE);
+        boolean active = state.getValue(ACTIVE);
         if (active) {
             MinecraftServer server = serverWorld.getServer();
-            serverWorld.getGameRules().setValue(GameRules.SPAWN_PHANTOMS, active, server);
+            serverWorld.getGameRules().set(GameRules.SPAWN_PHANTOMS, active, server);
         }
 
-        super.onStateReplaced(state, serverWorld, pos, moved);
+        super.affectNeighborsAfterRemoval(state, serverWorld, pos, moved);
     }
 
     @Override
-    public BlockState getPlacementState(ItemPlacementContext ctx) {
+    public BlockState getStateForPlacement(BlockPlaceContext ctx) {
         if (HasBeenPlaced) {
-            PlayerEntity player = ctx.getPlayer();
+            Player player = ctx.getPlayer();
 
-            if (player instanceof ServerPlayerEntity serverPlayer
-                && serverPlayer.getEntityWorld().getServer() != null
-                && !serverPlayer.getEntityWorld().getServer().isSingleplayer()) {
-                    serverPlayer.networkHandler.disconnect(Text.translatable("message.blockisplaced"));
+            if (player instanceof ServerPlayer serverPlayer
+                && serverPlayer.level().getServer() != null
+                && !serverPlayer.level().getServer().isSingleplayer()) {
+                    serverPlayer.connection.disconnect(Component.translatable("message.blockisplaced"));
             }
 
             else {
-                if (!ctx.getWorld().isClient()) {
-                    ctx.getPlayer().sendMessage(Text.translatable("message.blockisplaced"), true);
+                if (!ctx.getLevel().isClientSide()) {
+                    ctx.getPlayer().displayClientMessage(Component.translatable("message.blockisplaced"), true);
                 }
 
                 if (ctx.getPlayer() != null) {
-                    ctx.getPlayer().swingHand(ctx.getHand());
+                    ctx.getPlayer().swing(ctx.getHand());
                     return null;
                 }
 
@@ -153,67 +153,67 @@ public class PhantomDisabler extends Block {
             return null;
         }
 
-        return this.getDefaultState();
+        return this.defaultBlockState();
     }
 
 
     @Override
-    public ActionResult onUse(BlockState state, World world, BlockPos pos, PlayerEntity player, BlockHitResult hit) {
-        if (!world.isClient()) {
-            boolean currentState = state.get(ACTIVE);
-            BlockState newState = state.with(ACTIVE, !currentState);
-            world.setBlockState(pos, newState, 3);
+    public InteractionResult useWithoutItem(BlockState state, Level world, BlockPos pos, Player player, BlockHitResult hit) {
+        if (!world.isClientSide()) {
+            boolean currentState = state.getValue(ACTIVE);
+            BlockState newState = state.setValue(ACTIVE, !currentState);
+            world.setBlock(pos, newState, 3);
 
             String message = !currentState ? "message.phantomsdisabled" : "message.phantomsenabled";
-            player.sendMessage(Text.translatable(message), true);
+            player.displayClientMessage(Component.translatable(message), true);
 
-            boolean active = state.get(ACTIVE);
+            boolean active = state.getValue(ACTIVE);
             if (active) {
-                ServerWorld serverWorld = (ServerWorld) world;
+                ServerLevel serverWorld = (ServerLevel) world;
                 MinecraftServer server = serverWorld.getServer();
-                serverWorld.getGameRules().setValue(GameRules.SPAWN_PHANTOMS, active, server);
+                serverWorld.getGameRules().set(GameRules.SPAWN_PHANTOMS, active, server);
             }
 
-            world.playSound(null, pos, currentState ? SoundEvents.BLOCK_STONE_BUTTON_CLICK_OFF : SoundEvents.BLOCK_STONE_BUTTON_CLICK_ON,
-                    SoundCategory.BLOCKS, 1.0F, 1.0F);
+            world.playSound(null, pos, currentState ? SoundEvents.STONE_BUTTON_CLICK_OFF : SoundEvents.STONE_BUTTON_CLICK_ON,
+                    SoundSource.BLOCKS, 1.0F, 1.0F);
         }
 
-        return ActionResult.SUCCESS;
+        return InteractionResult.SUCCESS;
     }
 
     //Redstone Support
     @Override
-    protected boolean hasComparatorOutput(BlockState state) {
+    protected boolean hasAnalogOutputSignal(BlockState state) {
         return true;
     }
 
     @Override
-    protected int getComparatorOutput(BlockState state, World world, BlockPos pos, Direction direction) {
-        return world.getBlockState(pos).get(ACTIVE) ? 15 : 0;
+    protected int getAnalogOutputSignal(BlockState state, Level world, BlockPos pos, Direction direction) {
+        return world.getBlockState(pos).getValue(ACTIVE) ? 15 : 0;
     }
 
     @Override
-    protected void neighborUpdate(BlockState state, World world, BlockPos pos, Block sourceBlock, @Nullable WireOrientation wireOrientation, boolean notify) {
-        if (world instanceof ServerWorld serverWorld) {
+    protected void neighborChanged(BlockState state, Level world, BlockPos pos, Block sourceBlock, @Nullable Orientation wireOrientation, boolean notify) {
+        if (world instanceof ServerLevel serverWorld) {
             this.update(state, serverWorld, pos);
         }
     }
 
-    public void update(BlockState state, ServerWorld world, BlockPos pos) {
-        boolean bl = world.isReceivingRedstonePower(pos);
-        if (bl != (Boolean)state.get(POWERED)) {
+    public void update(BlockState state, ServerLevel world, BlockPos pos) {
+        boolean bl = world.hasNeighborSignal(pos);
+        if (bl != (Boolean)state.getValue(POWERED)) {
             BlockState blockState = state;
-            if (!(Boolean)state.get(POWERED)) {
+            if (!(Boolean)state.getValue(POWERED)) {
                 blockState = state.cycle(ACTIVE);
-                world.playSound(null, pos, blockState.get(ACTIVE) ? SoundEvents.BLOCK_STONE_BUTTON_CLICK_ON : SoundEvents.BLOCK_STONE_BUTTON_CLICK_OFF, SoundCategory.BLOCKS);
-                String message = blockState.get(ACTIVE) ? "message.phantomsdisabled" : "message.phantomsenabled";
+                world.playSound(null, pos, blockState.getValue(ACTIVE) ? SoundEvents.STONE_BUTTON_CLICK_ON : SoundEvents.STONE_BUTTON_CLICK_OFF, SoundSource.BLOCKS);
+                String message = blockState.getValue(ACTIVE) ? "message.phantomsdisabled" : "message.phantomsenabled";
                 MinecraftServer server = world.getServer();
-                for (ServerPlayerEntity player : server.getPlayerManager().getPlayerList()) {
-                    player.sendMessage(Text.translatable(message), true);
+                for (ServerPlayer player : server.getPlayerList().getPlayers()) {
+                    player.displayClientMessage(Component.translatable(message), true);
                 }
             }
 
-            world.setBlockState(pos, blockState.with(POWERED, bl), Block.NOTIFY_ALL);
+            world.setBlock(pos, blockState.setValue(POWERED, bl), Block.UPDATE_ALL);
         }
     }
 }
