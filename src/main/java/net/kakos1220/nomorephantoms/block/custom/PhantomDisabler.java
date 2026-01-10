@@ -7,6 +7,7 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.InteractionResult;
@@ -117,11 +118,8 @@ public class PhantomDisabler extends Block {
             SetPlacement(serverWorld, false, pos);
         }
 
-        boolean active = state.getValue(ACTIVE);
-        if (active) {
-            MinecraftServer server = serverWorld.getServer();
-            serverWorld.getGameRules().set(GameRules.SPAWN_PHANTOMS, active, server);
-        }
+        MinecraftServer server = serverWorld.getServer();
+        serverWorld.getGameRules().set(GameRules.SPAWN_PHANTOMS, true, server);
 
         super.affectNeighborsAfterRemoval(state, serverWorld, pos, moved);
     }
@@ -160,22 +158,20 @@ public class PhantomDisabler extends Block {
     @Override
     public InteractionResult useWithoutItem(BlockState state, Level world, BlockPos pos, Player player, BlockHitResult hit) {
         if (!world.isClientSide()) {
-            boolean currentState = state.getValue(ACTIVE);
-            BlockState newState = state.setValue(ACTIVE, !currentState);
-            world.setBlock(pos, newState, 3);
+            boolean newState = !state.getValue(ACTIVE);
+            BlockState setState = state.setValue(ACTIVE, newState);
+            world.setBlock(pos, setState, 3);
 
-            String message = !currentState ? "message.phantomsdisabled" : "message.phantomsenabled";
+
+            ServerLevel serverWorld = (ServerLevel) world;
+            MinecraftServer server = serverWorld.getServer();
+            serverWorld.getGameRules().set(GameRules.SPAWN_PHANTOMS, !newState, server);
+
+            String message = newState ? "message.phantomsenabled" : "message.phantomsdisabled";
             player.displayClientMessage(Component.translatable(message), true);
 
-            boolean active = state.getValue(ACTIVE);
-            if (active) {
-                ServerLevel serverWorld = (ServerLevel) world;
-                MinecraftServer server = serverWorld.getServer();
-                serverWorld.getGameRules().set(GameRules.SPAWN_PHANTOMS, active, server);
-            }
-
-            world.playSound(null, pos, currentState ? SoundEvents.STONE_BUTTON_CLICK_OFF : SoundEvents.STONE_BUTTON_CLICK_ON,
-                    SoundSource.BLOCKS, 1.0F, 1.0F);
+            SoundEvent sound = newState ? SoundEvents.STONE_BUTTON_CLICK_OFF : SoundEvents.STONE_BUTTON_CLICK_ON;
+            world.playSound(null, pos, sound, SoundSource.BLOCKS, 1.0F, 1.0F);
         }
 
         return InteractionResult.SUCCESS;
