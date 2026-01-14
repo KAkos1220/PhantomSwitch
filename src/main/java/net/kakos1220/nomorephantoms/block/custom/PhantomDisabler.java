@@ -9,6 +9,7 @@ import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.sound.SoundCategory;
+import net.minecraft.sound.SoundEvent;
 import net.minecraft.sound.SoundEvents;
 import net.minecraft.state.StateManager;
 import net.minecraft.state.property.BooleanProperty;
@@ -116,9 +117,7 @@ public class PhantomDisabler extends Block {
             SetPlacement(world, false, pos);
         }
 
-        if (state.get(ACTIVE) && !newState.isOf(this)) {
-            world.getServer().getGameRules().get(GameRules.DO_INSOMNIA).set(true, world.getServer());
-        }
+        world.getServer().getGameRules().get(GameRules.DO_INSOMNIA).set(true, world.getServer());
 
         super.onStateReplaced(state, world, pos, newState, moved);
     }
@@ -154,18 +153,20 @@ public class PhantomDisabler extends Block {
 
     @Override
     public ActionResult onUse(BlockState state, World world, BlockPos pos, PlayerEntity player, BlockHitResult hit) {
-        if (!world.isClient) {
-            boolean currentState = state.get(ACTIVE);
-            BlockState newState = state.with(ACTIVE, !currentState);
-            world.setBlockState(pos, newState, 3);
+        if (!world.isClient()) {
+            boolean newState = !state.get(ACTIVE);
+            BlockState setState = state.with(ACTIVE, newState);
+            world.setBlockState(pos, setState, 3);
 
-            String message = !currentState ? "message.phantomsdisabled" : "message.phantomsenabled";
+
+            MinecraftServer server = world.getServer();
+            server.getGameRules().get(GameRules.DO_INSOMNIA).set(!newState, server);
+
+            String message = newState ? "message.phantomsenabled" : "message.phantomsdisabled";
             player.sendMessage(Text.translatable(message), true);
 
-            world.getServer().getGameRules().get(GameRules.DO_INSOMNIA).set(state.get(ACTIVE), world.getServer());
-
-            world.playSound(null, pos, currentState ? SoundEvents.BLOCK_STONE_BUTTON_CLICK_OFF : SoundEvents.BLOCK_STONE_BUTTON_CLICK_ON,
-                    SoundCategory.BLOCKS, 1.0F, 1.0F);
+            SoundEvent sound = newState ? SoundEvents.BLOCK_STONE_BUTTON_CLICK_OFF : SoundEvents.BLOCK_STONE_BUTTON_CLICK_ON;
+            world.playSound(null, pos, sound, SoundCategory.BLOCKS, 1.0F, 1.0F);
         }
 
         return ActionResult.SUCCESS;
