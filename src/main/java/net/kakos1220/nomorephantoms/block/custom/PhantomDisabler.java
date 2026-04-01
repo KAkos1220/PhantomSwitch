@@ -1,6 +1,6 @@
 package net.kakos1220.nomorephantoms.block.custom;
 
-import net.fabricmc.fabric.api.event.lifecycle.v1.ServerWorldEvents;
+import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLevelEvents;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.network.chat.Component;
@@ -95,7 +95,7 @@ public class PhantomDisabler extends Block {
     }
 
     public static void IsPhantomDisablerPlaced() {
-        ServerWorldEvents.LOAD.register((server, world) -> {
+        ServerLevelEvents.LOAD.register((server, world) -> {
             if (!world.isClientSide()) {
                 PhantomDisabler.Startup(world);
             }
@@ -137,7 +137,7 @@ public class PhantomDisabler extends Block {
 
             else {
                 if (!ctx.getLevel().isClientSide()) {
-                    ctx.getPlayer().displayClientMessage(Component.translatable("message.blockisplaced"), true);
+                    ctx.getPlayer().sendOverlayMessage(Component.translatable("message.blockisplaced"));
                 }
 
                 if (ctx.getPlayer() != null) {
@@ -168,7 +168,7 @@ public class PhantomDisabler extends Block {
             serverWorld.getGameRules().set(GameRules.SPAWN_PHANTOMS, !newState, server);
 
             String message = newState ? "message.phantomsenabled" : "message.phantomsdisabled";
-            player.displayClientMessage(Component.translatable(message), true);
+            player.sendOverlayMessage(Component.translatable(message));
 
             SoundEvent sound = newState ? SoundEvents.STONE_BUTTON_CLICK_OFF : SoundEvents.STONE_BUTTON_CLICK_ON;
             world.playSound(null, pos, sound, SoundSource.BLOCKS, 1.0F, 1.0F);
@@ -205,7 +205,7 @@ public class PhantomDisabler extends Block {
                 String message = blockState.getValue(ACTIVE) ? "message.phantomsdisabled" : "message.phantomsenabled";
                 MinecraftServer server = world.getServer();
                 for (ServerPlayer player : server.getPlayerList().getPlayers()) {
-                    player.displayClientMessage(Component.translatable(message), true);
+                    player.sendOverlayMessage(Component.translatable(message));
                 }
             }
 

@@ -1,6 +1,6 @@
 package net.kakos1220.nomorephantoms.block;
 
-import net.fabricmc.fabric.api.itemgroup.v1.ItemGroupEvents;
+import net.fabricmc.fabric.api.creativetab.v1.CreativeModeTabEvents;
 import net.kakos1220.nomorephantoms.Nomorephantoms;
 import net.kakos1220.nomorephantoms.block.custom.PhantomDisabler;
 import net.minecraft.core.Registry;
@@ -38,7 +38,7 @@ public class ModBlocks {
     public static void registerModBlocks() {
         Nomorephantoms.LOGGER.info("Registering Mod Blocks for " + Nomorephantoms.MOD_ID);
 
-        ItemGroupEvents.modifyEntriesEvent(CreativeModeTabs.REDSTONE_BLOCKS).register(entries -> {
+        CreativeModeTabEvents.modifyOutputEvent(CreativeModeTabs.REDSTONE_BLOCKS).register(entries -> {
             entries.accept(ModBlocks.phantom_disabler);
         });
     }
